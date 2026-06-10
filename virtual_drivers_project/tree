@@ -1,4 +1,4 @@
-virtual_drivers_project/
+virtual_drivers
 ├── Makefile
 ├── char_driver/
 │   ├── Makefile
