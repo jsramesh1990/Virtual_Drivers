@@ -1,4 +1,4 @@
-# Virtual Character & Block Device Drivers Project
+# Virtual Character & Block Device Drivers
 
 ![Linux Driver](https://img.shields.io/badge/Linux-Kernel%20Driver-blue.svg)
 ![C Language](https://img.shields.io/badge/Language-C-orange.svg)
