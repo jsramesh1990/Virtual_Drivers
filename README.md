@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux%20x86__64-red.svg)
 ![Version](https://img.shields.io/badge/Version-2.0-ff69b4.svg)
 
-##  Project Overview
+##  Overview
 
 A comprehensive Linux kernel module project demonstrating **virtual character** and **block device drivers** with advanced userspace applications for testing, benchmarking, and management. This project serves as an educational resource for understanding Linux device driver development and userspace-kernel communication.
 
