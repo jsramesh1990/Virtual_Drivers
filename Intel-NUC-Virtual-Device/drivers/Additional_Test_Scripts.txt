@@ -1,0 +1,297 @@
+Additional Test Scripts
+test-v4l2.sh
+bash
+
+#!/bin/bash
+# test-v4l2.sh - Test V4L2 virtual camera
+
+echo "========================================="
+echo "V4L2 Virtual Camera Test"
+echo "========================================="
+
+# Check if module is loaded
+if lsmod | grep -q v4l2-driver; then
+    echo "✅ v4l2-driver loaded"
+else
+    echo "❌ v4l2-driver not loaded"
+    exit 1
+fi
+
+# Check for video devices
+VIDEO_DEVICES=$(ls /dev/video* 2>/dev/null)
+if [ -n "$VIDEO_DEVICES" ]; then
+    echo "✅ Video devices found:"
+    echo "$VIDEO_DEVICES"
+else
+    echo "❌ No video devices found"
+    exit 1
+fi
+
+# Test each video device
+for dev in $VIDEO_DEVICES; do
+    echo ""
+    echo "Testing $dev..."
+    
+    # Query device capabilities
+    if v4l2-ctl -d $dev --all 2>/dev/null | grep -q "Video Capture"; then
+        echo "  ✅ Device supports video capture"
+    else
+        echo "  ❌ Device does not support video capture"
+    fi
+    
+    # Get device info
+    echo "  Device info:"
+    v4l2-ctl -d $dev --all 2>/dev/null | head -10 || echo "  Failed to get device info"
+    
+    # Test streaming
+    echo "  Testing streaming..."
+    timeout 2 v4l2-ctl -d $dev --stream-mmap --stream-count=10 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "  ✅ Streaming test passed"
+    else
+        echo "  ❌ Streaming test failed"
+    fi
+done
+
+echo ""
+echo "========================================="
+echo "Test Complete"
+echo "========================================="
+
+test-camera.sh
+bash
+
+#!/bin/bash
+# test-camera.sh - Test virtual camera with applications
+
+echo "========================================="
+echo "Virtual Camera Application Test"
+echo "========================================="
+
+# Check if video device exists
+if [ ! -e /dev/video0 ]; then
+    echo "❌ No video device found"
+    exit 1
+fi
+
+# Test with ffmpeg
+echo "1. Testing with ffmpeg..."
+if command -v ffmpeg >/dev/null 2>&1; then
+    timeout 2 ffmpeg -f v4l2 -i /dev/video0 -frames:v 10 -f null /dev/null 2>&1 | head -20
+    if [ $? -eq 0 ] || [ $? -eq 124 ]; then
+        echo "  ✅ ffmpeg test passed"
+    else
+        echo "  ❌ ffmpeg test failed"
+    fi
+else
+    echo "  ⚠️ ffmpeg not installed"
+fi
+
+# Test with ffplay
+echo ""
+echo "2. Testing with ffplay..."
+if command -v ffplay >/dev/null 2>&1; then
+    echo "  Starting ffplay (press any key to stop)..."
+    timeout 3 ffplay -f v4l2 -i /dev/video0 -nodisp -autoexit 2>/dev/null
+    if [ $? -eq 0 ] || [ $? -eq 124 ]; then
+        echo "  ✅ ffplay test passed"
+    else
+        echo "  ❌ ffplay test failed"
+    fi
+else
+    echo "  ⚠️ ffplay not installed"
+fi
+
+# Test with gstreamer
+echo ""
+echo "3. Testing with GStreamer..."
+if command -v gst-launch-1.0 >/dev/null 2>&1; then
+    timeout 2 gst-launch-1.0 v4l2src device=/dev/video0 ! fakesink 2>&1 | head -10
+    if [ $? -eq 0 ] || [ $? -eq 124 ]; then
+        echo "  ✅ GStreamer test passed"
+    else
+        echo "  ❌ GStreamer test failed"
+    fi
+else
+    echo "  ⚠️ GStreamer not installed"
+fi
+
+echo ""
+echo "========================================="
+echo "Test Complete"
+echo "========================================="
+
+test-pattern.sh
+bash
+
+#!/bin/bash
+# test-pattern.sh - Test different test patterns
+
+echo "========================================="
+echo "Test Pattern Test"
+echo "========================================="
+
+PATTERNS=(
+    "0:Color Bars"
+    "1:SMPTE Bars"
+    "2:Checkerboard"
+    "3:Gradient"
+    "4:Moving Bar"
+    "5:Noise"
+    "6:Color Wheel"
+    "7:Text"
+    "8:Clock"
+    "9:Movie"
+)
+
+for pattern in "${PATTERNS[@]}"; do
+    num=${pattern%:*}
+    name=${pattern#*:}
+    
+    echo ""
+    echo "Testing pattern $num: $name"
+    
+    # Set pattern
+    if [ -f /sys/module/frame_generator/parameters/fg_pattern ]; then
+        echo $num > /sys/module/frame_generator/parameters/fg_pattern
+        echo "  ✅ Pattern set to $num"
+    else
+        echo "  ❌ Cannot set pattern"
+    fi
+    
+    # Wait for frame
+    sleep 0.5
+    
+    # Capture frame
+    if [ -e /dev/video0 ]; then
+        timeout 1 v4l2-ctl -d /dev/video0 --stream-mmap --stream-count=1 2>/dev/null
+        if [ $? -eq 0 ] || [ $? -eq 124 ]; then
+            echo "  ✅ Frame captured"
+        else
+            echo "  ❌ Frame capture failed"
+        fi
+    fi
+done
+
+echo ""
+echo "========================================="
+echo "Test Complete"
+echo "========================================="
+
+setup-camera.sh
+bash
+
+#!/bin/bash
+# setup-camera.sh - Setup virtual camera with frame generator
+
+echo "========================================="
+echo "Virtual Camera Setup"
+echo "========================================="
+
+# Load modules
+echo "Loading modules..."
+sudo modprobe v4l2loopback
+sudo insmod frame-generator.ko
+sudo insmod v4l2-driver.ko
+
+# Wait for devices
+sleep 2
+
+# Check devices
+VIDEO_DEVICES=$(ls /dev/video* 2>/dev/null)
+if [ -z "$VIDEO_DEVICES" ]; then
+    echo "❌ No video devices found"
+    exit 1
+fi
+
+echo "✅ Video devices found: $VIDEO_DEVICES"
+
+# Set default pattern
+if [ -f /sys/module/frame_generator/parameters/fg_pattern ]; then
+    echo "0" > /sys/module/frame_generator/parameters/fg_pattern
+    echo "✅ Pattern set to Color Bars"
+fi
+
+# Set default resolution
+if [ -f /sys/module/frame_generator/parameters/fg_width ]; then
+    echo "1920" > /sys/module/frame_generator/parameters/fg_width
+    echo "✅ Width set to 1920"
+fi
+
+if [ -f /sys/module/frame_generator/parameters/fg_height ]; then
+    echo "1080" > /sys/module/frame_generator/parameters/fg_height
+    echo "✅ Height set to 1080"
+fi
+
+# Show status
+echo ""
+echo "Device Information:"
+v4l2-ctl --list-devices
+
+echo ""
+echo "Device Capabilities:"
+for dev in /dev/video*; do
+    if [ -e $dev ]; then
+        echo "--- $dev ---"
+        v4l2-ctl -d $dev --all 2>/dev/null | head -20
+    fi
+done
+
+echo ""
+echo "========================================="
+echo "Setup Complete"
+echo "========================================="
+echo ""
+echo "Use these commands to test:"
+echo "  ffplay /dev/video0"
+echo "  ffmpeg -f v4l2 -i /dev/video0 -frames:v 10 test.mp4"
+echo "  v4l2-ctl -d /dev/video0 --all"
+echo ""
+
+Quick Start Guide
+bash
+
+# 1. Build the drivers
+cd /path/to/Intel-NUC-Virtual-Device/drivers/virtual-camera
+make
+
+# 2. Load the drivers
+sudo make load
+
+# 3. Check status
+make status
+
+# 4. Test with ffplay
+ffplay /dev/video0
+
+# 5. Test with device manager
+device-manager.py create camera video2
+device-manager.py list
+
+# 6. Run full test suite
+make test
+
+# 7. Debug if needed
+make debug
+
+# 8. Unload drivers
+sudo make unload
+
+# 9. Clean up
+make clean
+
+Module Parameters
+
+You can customize the frame generator behavior with module parameters:
+bash
+
+# Load with custom parameters
+sudo modprobe frame-generator fg_width=1280 fg_height=720 fg_fps=60 fg_format=0 fg_pattern=0
+
+# Or modify at runtime
+echo "1280" > /sys/module/frame_generator/parameters/fg_width
+echo "720" > /sys/module/frame_generator/parameters/fg_height
+echo "60" > /sys/module/frame_generator/parameters/fg_fps
+echo "1" > /sys/module/frame_generator/parameters/fg_pattern
+
+This complete Makefile and test suite provides everything needed to build, test, and debug the virtual camera drivers on the Intel NUC platform.

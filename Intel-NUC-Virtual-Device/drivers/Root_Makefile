@@ -1,0 +1,71 @@
+# Root Makefile for all Virtual Device Drivers
+# Intel NUC Virtual Device Platform
+
+SUBDIRS = virtual-net virtual-usb virtual-serial virtual-disks virtual-camera virtual-audio
+
+all: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@ all
+
+clean:
+	@for dir in $(SUBDIRS); do \
+		echo "Cleaning $$dir..."; \
+		$(MAKE) -C $$dir clean; \
+	done
+
+install:
+	@for dir in $(SUBDIRS); do \
+		echo "Installing $$dir..."; \
+		$(MAKE) -C $$dir install; \
+	done
+
+uninstall:
+	@for dir in $(SUBDIRS); do \
+		echo "Uninstalling $$dir..."; \
+		$(MAKE) -C $$dir uninstall; \
+	done
+
+load:
+	@for dir in $(SUBDIRS); do \
+		echo "Loading $$dir..."; \
+		$(MAKE) -C $$dir load; \
+	done
+
+unload:
+	@for dir in $(SUBDIRS); do \
+		echo "Unloading $$dir..."; \
+		$(MAKE) -C $$dir unload; \
+	done
+
+status:
+	@echo "=== Virtual Device Drivers Status ==="
+	@echo ""
+	@echo "Loaded Modules:"
+	@lsmod | grep -E "veth|bridge|tap|usb-gadget|usb-redirect|pty|serial|loop|nbd|v4l2|snd|pipewire" || echo "No virtual device modules loaded"
+	@echo ""
+	@echo "Network Devices:"
+	@ip link show | grep -E "veth|br|tap" || echo "No virtual network devices"
+	@echo ""
+	@echo "Serial Devices:"
+	@ls -la /dev/ttyV* 2>/dev/null || echo "No virtual serial devices"
+	@echo ""
+	@echo "Video Devices:"
+	@ls -la /dev/video* 2>/dev/null || echo "No virtual video devices"
+	@echo ""
+	@echo "Audio Devices:"
+	@aplay -l 2>/dev/null | grep -i virtual || echo "No virtual audio devices"
+
+test:
+	@for dir in $(SUBDIRS); do \
+		echo "Testing $$dir..."; \
+		$(MAKE) -C $$dir test; \
+	done
+
+debug:
+	@for dir in $(SUBDIRS); do \
+		echo "Debugging $$dir..."; \
+		$(MAKE) -C $$dir debug; \
+	done
+
+.PHONY: all clean install uninstall load unload status test debug $(SUBDIRS)

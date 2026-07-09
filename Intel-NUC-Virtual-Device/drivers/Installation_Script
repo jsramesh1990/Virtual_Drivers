@@ -1,0 +1,75 @@
+#!/bin/bash
+# install-all.sh - Install all virtual device drivers
+
+set -e
+
+echo "=== Intel NUC Virtual Device Drivers Installation ==="
+echo ""
+
+# Check for root privileges
+if [ "$EUID" -ne 0 ]; then 
+    echo "Please run as root"
+    exit 1
+fi
+
+# Create installation directory
+INSTALL_DIR="/opt/virtual-devices"
+mkdir -p $INSTALL_DIR
+
+# Copy drivers
+echo "Installing drivers to $INSTALL_DIR..."
+cp -r . $INSTALL_DIR/
+
+# Build all drivers
+echo "Building drivers..."
+cd $INSTALL_DIR
+make clean
+make all
+
+# Install drivers
+echo "Installing drivers..."
+make install
+
+# Load drivers
+echo "Loading drivers..."
+make load
+
+# Create udev rules
+echo "Creating udev rules..."
+cat > /etc/udev/rules.d/99-virtual-devices.rules << 'EOF'
+# Virtual Network Devices
+SUBSYSTEM=="net", KERNEL=="veth*", GROUP="netdev", MODE="0660"
+SUBSYSTEM=="net", KERNEL=="br*", GROUP="netdev", MODE="0660"
+SUBSYSTEM=="net", KERNEL=="tap*", GROUP="netdev", MODE="0660"
+
+# Virtual Serial Devices
+SUBSYSTEM=="tty", KERNEL=="ttyV*", GROUP="dialout", MODE="0660"
+
+# Virtual USB Devices
+SUBSYSTEM=="usb", KERNEL=="usb*", GROUP="usb", MODE="0660"
+
+# Virtual Video Devices
+SUBSYSTEM=="video4linux", KERNEL=="video*", GROUP="video", MODE="0660"
+
+# Virtual Audio Devices
+SUBSYSTEM=="sound", KERNEL=="*", GROUP="audio", MODE="0660"
+EOF
+
+# Reload udev
+udevadm control --reload-rules
+udevadm trigger
+
+echo ""
+echo "=== Installation Complete ==="
+echo ""
+echo "Virtual Device Drivers Status:"
+make status
+echo ""
+echo "To use the drivers:"
+echo "  make load    - Load all drivers"
+echo "  make unload  - Unload all drivers"
+echo "  make status  - Check driver status"
+echo "  make test    - Run tests"
+echo "  make debug   - Debug information"
+echo ""
+echo "For more information, see the documentation in docs/"

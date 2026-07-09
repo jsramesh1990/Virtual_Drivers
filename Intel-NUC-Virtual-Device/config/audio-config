@@ -1,0 +1,502 @@
+# ============================================================
+# Audio Configuration for Intel NUC Virtual Devices
+# ============================================================
+# Version: 1.0
+# Platform: Intel NUC 12 Pro
+# ============================================================
+
+# --------------------------
+# Audio System Selection
+# --------------------------
+audio_system:
+  primary: "pipewire"  # Options: pipewire, pulseaudio, alsa
+  fallback: "pulseaudio"
+  compatibility:
+    - alsa
+    - pulseaudio
+    - jack
+
+# --------------------------
+# ALSA Configuration
+# --------------------------
+alsa:
+  cards:
+    - name: "HDA Intel PCH"
+      driver: "snd_hda_intel"
+      index: 0
+      enabled: true
+      mixer: "Master"
+      channels: 8
+      sample_rate: 48000
+      period_size: 1024
+      buffer_size: 8192
+    
+    - name: "USB Audio"
+      driver: "snd_usb_audio"
+      index: 1
+      enabled: true
+      mixer: "PCM"
+      channels: 2
+      sample_rate: 48000
+      period_size: 256
+      buffer_size: 2048
+  
+  pcm:
+    - name: "default"
+      type: "plug"
+      slave:
+        pcm: "dmix"
+        format: "S32_LE"
+        rate: 48000
+        channels: 8
+    
+    - name: "dmix"
+      type: "dmix"
+      slave:
+        pcm: "hw:0,0"
+        format: "S32_LE"
+        rate: 48000
+        channels: 8
+    
+    - name: "dsnoop"
+      type: "dsnoop"
+      slave:
+        pcm: "hw:0,0"
+        format: "S32_LE"
+        rate: 48000
+        channels: 8
+    
+    - name: "null"
+      type: "null"
+      rate: 48000
+      channels: 8
+  
+  ctl:
+    - name: "default"
+      type: "hw"
+      card: 0
+    
+    - name: "mixer"
+      type: "hw"
+      card: 0
+
+# --------------------------
+# PulseAudio Configuration
+# --------------------------
+pulseaudio:
+  server: false
+  client:
+    daemonize: true
+    log_level: info
+    resample_method: speex-float-1
+    enable_remixing: true
+    enable_lfe_remixing: false
+    flat_volumes: true
+    rlimit_rtprio: 9
+    rlimit_nice: 11
+    default_sample_rate: 48000
+    alternate_sample_rate: 44100
+    default_fragments: 2
+    default_fragment_size_msec: 25
+    default_channels: 2
+  
+  modules:
+    - name: "module-udev-detect"
+      enabled: true
+      options:
+        - "ignore_virtual=no"
+    
+    - name: "module-jack-detect"
+      enabled: true
+      options: []
+    
+    - name: "module-native-protocol-unix"
+      enabled: true
+      options:
+        - "auth-anonymous=1"
+        - "socket-path=/run/user/1000/pulse/native"
+    
+    - name: "module-default-device-restore"
+      enabled: true
+      options: []
+    
+    - name: "module-rescue-streams"
+      enabled: true
+      options: []
+    
+    - name: "module-always-sink"
+      enabled: true
+      options: []
+    
+    - name: "module-suspend-on-idle"
+      enabled: true
+      options: []
+    
+    - name: "module-x11-publish"
+      enabled: true
+      options:
+        - "display=:0"
+    
+    - name: "module-esound-protocol-unix"
+      enabled: false
+      options: []
+    
+    - name: "module-gsettings"
+      enabled: true
+      options: []
+  
+  # Virtual Sinks
+  sinks:
+    - name: "virtual-mic"
+      type: "null-sink"
+      format: "s16le"
+      rate: 48000
+      channels: 2
+      description: "Virtual Microphone"
+    
+    - name: "virtual-speaker"
+      type: "null-sink"
+      format: "s16le"
+      rate: 48000
+      channels: 2
+      description: "Virtual Speaker"
+    
+    - name: "loopback"
+      type: "loopback"
+      source: "virtual-mic.monitor"
+      sink: "virtual-speaker"
+      description: "Audio Loopback"
+
+# --------------------------
+# PipeWire Configuration
+# --------------------------
+pipewire:
+  server:
+    enabled: true
+    runtime: "/run/user/1000/pipewire"
+    log_level: info
+    
+    # Properties
+    properties:
+      default_clock_rate: 48000
+      default_clock_quantum: 1024
+      default_clock_min_quantum: 32
+      default_clock_max_quantum: 8192
+      resample_quality: 4
+      default_sample_rate: 48000
+      default_channels: 2
+      default_position: "FL,FR"
+    
+    # Modules
+    modules:
+      - name: "libpipewire-module-rtkit"
+        args:
+          - "nice.level=-11"
+          - "rt.prio=88"
+          - "rt.time.soft=200000"
+          - "rt.time.hard=200000"
+      
+      - name: "libpipewire-module-protocol-native"
+        args: []
+      
+      - name: "libpipewire-module-profiler"
+        args: []
+      
+      - name: "libpipewire-module-metadata"
+        args: []
+      
+      - name: "libpipewire-module-spa-device-factory"
+        args: []
+      
+      - name: "libpipewire-module-spa-node-factory"
+        args: []
+      
+      - name: "libpipewire-module-client-node"
+        args: []
+      
+      - name: "libpipewire-module-client-device"
+        args: []
+      
+      - name: "libpipewire-module-portal"
+        args: []
+      
+      - name: "libpipewire-module-alsa"
+        enabled: true
+        args: []
+      
+      - name: "libpipewire-module-loopback"
+        enabled: true
+        args: []
+      
+      - name: "libpipewire-module-pipe-tunnel"
+        enabled: true
+        args: []
+  
+  # Virtual Devices
+  virtual:
+    - name: "Virtual Microphone"
+      type: "source"
+      media_class: "Audio/Source"
+      properties:
+        audio.position: "FL,FR"
+        node.name: "virtual-mic"
+        node.description: "Virtual Microphone"
+        device.api: "dummy"
+        device.description: "Virtual Microphone"
+    
+    - name: "Virtual Speaker"
+      type: "sink"
+      media_class: "Audio/Sink"
+      properties:
+        audio.position: "FL,FR"
+        node.name: "virtual-speaker"
+        node.description: "Virtual Speaker"
+        device.api: "dummy"
+        device.description: "Virtual Speaker"
+    
+    - name: "Audio Bridge"
+      type: "bridge"
+      media_class: "Audio/Sink"
+      properties:
+        audio.position: "FL,FR"
+        node.name: "audio-bridge"
+        node.description: "Audio Bridge"
+        device.api: "dummy"
+        device.description: "Audio Bridge"
+        bridge.mode: "copy"
+
+# --------------------------
+# JACK Integration
+# --------------------------
+jack:
+  enabled: true
+  bridge:
+    enabled: true
+    auto_connect: true
+    input_ports: 2
+    output_ports: 2
+    sample_rate: 48000
+    buffer_size: 1024
+  
+  routing:
+    - source: "system:capture_1"
+      target: "virtual-mic:playback_1"
+    - source: "system:capture_2"
+      target: "virtual-mic:playback_2"
+    - source: "virtual-speaker:capture_1"
+      target: "system:playback_1"
+    - source: "virtual-speaker:capture_2"
+      target: "system:playback_2"
+
+# --------------------------
+# Audio Processing
+# --------------------------
+processing:
+  filters:
+    - name: "equalizer"
+      enabled: true
+      params:
+        - "type:parametric"
+        - "frequency:60"
+        - "gain:3"
+        - "q:1"
+        - "type:parametric"
+        - "frequency:250"
+        - "gain:-2"
+        - "q:1"
+    
+    - name: "compressor"
+      enabled: true
+      params:
+        - "threshold:-12"
+        - "ratio:4:1"
+        - "knee:6"
+        - "attack:3"
+        - "release:100"
+    
+    - name: "reverb"
+      enabled: false
+      params:
+        - "room:50"
+        - "damp:50"
+        - "width:70"
+        - "level:30"
+  
+  effects:
+    - name: "noise-reduction"
+      enabled: true
+      params:
+        - "noise_reduction:0.8"
+        - "aggressiveness:3"
+    
+    - name: "echo-cancel"
+      enabled: true
+      params:
+        - "delay:100"
+        - "gain:0.8"
+
+# --------------------------
+# Audio Routing
+# --------------------------
+routing:
+  rules:
+    # System audio to virtual speaker
+    - name: "System to Virtual Speaker"
+      source: "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
+      target: "virtual-speaker"
+      enabled: true
+    
+    # Virtual mic to system audio
+    - name: "Virtual Mic to System"
+      source: "virtual-mic"
+      target: "alsa_output.pci-0000_00_1f.3.analog-stereo"
+      enabled: true
+    
+    # Loopback for screen recording
+    - name: "Screen Recording Loopback"
+      source: "virtual-speaker.monitor"
+      target: "virtual-mic"
+      enabled: true
+    
+    # Audio from VM to virtual speaker
+    - name: "VM to Virtual Speaker"
+      source: "pipewire-sink-vm"
+      target: "virtual-speaker"
+      enabled: true
+
+# --------------------------
+# Performance Settings
+# --------------------------
+performance:
+  realtime: true
+  priority: 90
+  buffer:
+    period_size: 1024
+    period_count: 2
+    sample_rate: 48000
+  
+  scheduling:
+    - name: "audio"
+      policy: "SCHED_RR"
+      priority: 90
+      nice: -20
+    
+    - name: "media"
+      policy: "SCHED_RR"
+      priority: 85
+      nice: -15
+  
+  cpu_affinity:
+    - process: "pipewire"
+      cores: [0, 1, 2, 3]  # P-cores
+    
+    - process: "wireplumber"
+      cores: [0, 1, 2, 3]  # P-cores
+    
+    - process: "pulseaudio"
+      cores: [4, 5, 6, 7]  # E-cores
+
+# --------------------------
+# Audio Monitoring
+# --------------------------
+monitoring:
+  enabled: true
+  interval: 5  # seconds
+  metrics:
+    - latency
+    - xrun_count
+    - buffer_underrun
+    - cpu_usage
+    - memory_usage
+  
+  alerts:
+    latency:
+      threshold: 50  # ms
+      action: "log"
+    
+    xrun_count:
+      threshold: 10
+      interval: 60  # seconds
+      action: "alert"
+  
+  logging:
+    enabled: true
+    file: "/var/log/audio/audio.log"
+    level: info
+    rotate:
+      max_size: "50M"
+      max_files: 10
+
+# --------------------------
+# Audio Security
+# --------------------------
+security:
+  access:
+    users:
+      - user: "root"
+        access: "full"
+      - user: "audio"
+        access: "full"
+      - user: "pulse"
+        access: "full"
+      - user: "user"
+        access: "read-write"
+  
+  permissions:
+    devices:
+      - path: "/dev/snd/*"
+        owner: "root"
+        group: "audio"
+        mode: "0660"
+    
+    virtual:
+      - path: "/dev/virtual-audio/*"
+        owner: "root"
+        group: "audio"
+        mode: "0666"
+
+# --------------------------
+# Audio Profiles
+# --------------------------
+profiles:
+  - name: "production"
+    description: "Production audio profile"
+    settings:
+      sample_rate: 48000
+      period_size: 1024
+      buffer_size: 8192
+      realtime: true
+      priority: 90
+  
+  - name: "development"
+    description: "Development audio profile"
+    settings:
+      sample_rate: 44100
+      period_size: 512
+      buffer_size: 4096
+      realtime: false
+      priority: 0
+  
+  - name: "low-latency"
+    description: "Low latency audio profile"
+    settings:
+      sample_rate: 96000
+      period_size: 64
+      buffer_size: 512
+      realtime: true
+      priority: 95
+      
+  - name: "virtual-device"
+    description: "Virtual device audio profile"
+    settings:
+      sample_rate: 48000
+      period_size: 256
+      buffer_size: 2048
+      realtime: true
+      priority: 80
+      virtual: true
+
+# --------------------------
+# Default Profile
+# --------------------------
+default_profile: "production"

@@ -1,0 +1,101 @@
+Usage Examples
+Network Throughput Tests
+bash
+
+# Test local loopback
+python3 network-throughput.py
+
+# Test remote host
+python3 network-throughput.py -H 192.168.1.100
+
+# Test specific interface
+python3 network-throughput.py -i eth0
+
+# Run all tests with 30 second duration
+python3 network-throughput.py -d 30 --all
+
+# Save results
+python3 network-throughput.py -o results.json
+
+# Verbose output
+python3 network-throughput.py -v
+
+USB Benchmark
+bash
+
+# Benchmark all USB devices
+python3 usb-benchmark.py
+
+# Benchmark specific device
+python3 usb-benchmark.py -d /dev/sdb
+
+# Benchmark USB gadget
+python3 usb-benchmark.py --gadget
+
+# Run loopback comparison
+python3 usb-benchmark.py --loopback
+
+# List USB devices
+python3 usb-benchmark.py --list
+
+# Save results
+python3 usb-benchmark.py -o results.json
+
+Disk Performance Tests
+bash
+
+# Benchmark all loop devices
+python3 disk-performance.py
+
+# Benchmark specific device
+python3 disk-performance.py -d /dev/loop0
+
+# Custom size and block size
+python3 disk-performance.py -s 200 -b 8192
+
+# Test all block sizes
+python3 disk-performance.py --all-block-sizes
+
+# List block devices
+python3 disk-performance.py --list
+
+# Save results
+python3 disk-performance.py -o results.json
+
+Run All Performance Tests
+bash
+
+# Create results directory
+mkdir -p performance_results
+
+# Run all tests
+python3 network-throughput.py -o performance_results/network.json
+python3 usb-benchmark.py -o performance_results/usb.json
+python3 disk-performance.py -o performance_results/disk.json
+
+# Combine results
+jq -s '.[0] + .[1] + .[2]' performance_results/*.json > performance_results/all.json
+
+These complete performance tests provide:
+
+    Network: TCP/UDP throughput, latency, packet loss, multi-stream
+
+    USB: Read/write speeds, IOPS, latency, gadget testing
+
+    Disk: Sequential/random, IOPS, latency, multithreaded
+
+Each test includes:
+
+    Comprehensive metrics
+
+    JSON output
+
+    Performance analysis
+
+    Recommendations
+
+    Verbose logging
+
+    Color-coded output
+
+

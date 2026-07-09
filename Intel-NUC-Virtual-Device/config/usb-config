@@ -1,0 +1,298 @@
+# ============================================================
+# USB Configuration for Intel NUC Virtual Devices
+# ============================================================
+# Version: 1.0
+# Platform: Intel NUC 12 Pro
+# ============================================================
+
+# --------------------------
+# USB Controller Configuration
+# --------------------------
+usb:
+  controllers:
+    # XHCI (USB 3.x) Controller
+    - name: xhci_hcd
+      type: xhci
+      ports: 10
+      speed: super
+      power: on
+      quirks: []
+    
+    # EHCI (USB 2.0) Controller
+    - name: ehci_hcd
+      type: ehci
+      ports: 4
+      speed: high
+      power: on
+    
+    # OHCI (USB 1.1) Controller
+    - name: ohci_hcd
+      type: ohci
+      ports: 2
+      speed: full
+      power: on
+
+  # --------------------------
+  # Physical USB Devices
+  # --------------------------
+  devices:
+    # USB Storage
+    - bus: 1
+      port: 1
+      vendor_id: "05e3"
+      product_id: "0748"
+      type: storage
+      speed: 480M
+      driver: usb-storage
+      mount: "/mnt/usb"
+      options:
+        - sync
+        - noatime
+        - rw
+    
+    # USB Webcam
+    - bus: 1
+      port: 2
+      vendor_id: "046d"
+      product_id: "082d"
+      type: video
+      speed: 480M
+      driver: uvcvideo
+      resolution: "1920x1080"
+      fps: 30
+    
+    # USB Audio
+    - bus: 1
+      port: 3
+      vendor_id: "0d8c"
+      product_id: "0005"
+      type: audio
+      speed: 12M
+      driver: snd-usb-audio
+      channels: 2
+      sample_rate: 48000
+
+# --------------------------
+# USB Gadget Configuration
+# --------------------------
+gadgets:
+  - name: g1
+    enabled: true
+    functions:
+      - type: acm
+        name: "ttyGS0"
+        description: "Serial Gadget"
+      
+      - type: ecm
+        name: "usb0"
+        mac_address: "00:11:22:33:44:55"
+        description: "Ethernet Gadget"
+      
+      - type: mass_storage
+        name: "lun0"
+        file: "/opt/virtual-devices/usb-gadget.img"
+        removable: true
+        ro: false
+        description: "Mass Storage Gadget"
+      
+      - type: hid
+        name: "hid0"
+        subclass: 0
+        protocol: 0
+        report_desc: "05010902A10105010901A10005091901290515002501750195018102C0"  # Keyboard HID
+        description: "HID Gadget"
+      
+      - type: uvc
+        name: "video0"
+        width: 1920
+        height: 1080
+        framerate: 30
+        format: "YUYV"
+        description: "UVC Gadget"
+    
+    configs:
+      - name: "c.1"
+        description: "Composite Gadget"
+        max_power: 500
+        functions:
+          - acm
+          - ecm
+          - mass_storage
+          - hid
+          - uvc
+    
+    strings:
+      manufacturer: "Intel NUC"
+      product: "Virtual USB Gadget"
+      serial: "123456789"
+
+# --------------------------
+# USB Redirection (for VMs)
+# --------------------------
+redirection:
+  enabled: true
+  filter:
+    - vendor: "046d"      # Logitech
+      product: "*"         # All products
+      allow: true
+    
+    - vendor: "0bda"      # Realtek
+      product: "*"         # All products
+      allow: true
+    
+    - vendor: "05e3"      # Genesys Logic
+      product: "*"         # All products
+      allow: true
+    
+    - vendor: "*"          # Default deny
+      product: "*"
+      allow: false
+
+  usbip:
+    enabled: true
+    port: 3240
+    bind_interface: "eth0"
+    security:
+      allowed_clients:
+        - "192.168.1.0/24"
+        - "10.0.0.0/24"
+    
+    devices:
+      - bus: 1
+        address: 2
+        export: true
+        name: "webcam"
+      - bus: 1
+        address: 3
+        export: true
+        name: "audio"
+
+# --------------------------
+# USB Autosuspend
+# --------------------------
+autosuspend:
+  enabled: true
+  delay: 2000  # milliseconds
+  exceptions:
+    - vendor: "0d8c"  # Audio devices
+      product: "*"
+      autosuspend: false
+    
+    - vendor: "046d"  # Logitech webcams
+      product: "*"
+      autosuspend: false
+    
+    - vendor: "05e3"  # Storage devices
+      product: "*"
+      autosuspend: true
+
+# --------------------------
+# USB Power Management
+# --------------------------
+power_management:
+  auto_suspend: true
+  runtime_pm: true
+  wakeup:
+    enabled: true
+    devices:
+      - bus: 1
+        port: 1  # Storage wakeup
+      - bus: 1
+        port: 2  # Webcam wakeup
+
+# --------------------------
+# USB Logging
+# --------------------------
+logging:
+  enabled: true
+  log_file: "/var/log/usb/usb.log"
+  log_level: info
+  events:
+    - attach
+    - detach
+    - suspend
+    - resume
+    - error
+
+# --------------------------
+# USB Security
+# --------------------------
+security:
+  usb_guard:
+    enabled: true
+    daemon: false
+    rules:
+      - "allow 05e3:0748"           # Storage
+      - "allow 046d:082d"           # Webcam
+      - "allow 0d8c:0005"           # Audio
+      - "deny *:*"                 # Deny all others
+    
+    block_duration: 600  # seconds
+    block_log: true
+  
+  usbguard_rules:
+    - interface: "usb-storage"
+      action: "allow"
+    
+    - interface: "usbhid"
+      action: "allow"
+    
+    - interface: "*"
+      action: "block"
+
+# --------------------------
+# USB 3.0 Configuration
+# --------------------------
+usb3:
+  enable: true
+  port_power:
+    max_power: 900  # mA
+    power_save: false
+  u1_timeout: 50    # microseconds
+  u2_timeout: 100   # microseconds
+
+# --------------------------
+# Virtual USB Devices
+# --------------------------
+virtual:
+  usbip:
+    - name: "virtual-storage"
+      type: storage
+      size: "1G"
+      path: "/opt/virtual-devices/virtual-usb.img"
+      format: ext4
+      export: true
+    
+    - name: "virtual-serial"
+      type: serial
+      port: "/dev/ttyUSB0"
+      speed: 115200
+      export: true
+    
+    - name: "virtual-hid"
+      type: hid
+      subclass: 0
+      protocol: 1  # Keyboard
+      export: true
+
+# --------------------------
+# USB Monitoring
+# --------------------------
+monitoring:
+  enabled: true
+  interval: 60  # seconds
+  metrics:
+    - device_count
+    - bandwidth_usage
+    - error_count
+    - power_consumption
+  
+  alerts:
+    bandwidth:
+      threshold: 80  # percent
+      action: "log"
+    
+    errors:
+      threshold: 10
+      interval: 60  # seconds
+      action: "alert"

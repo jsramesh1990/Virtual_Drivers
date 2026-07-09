@@ -1,0 +1,100 @@
+Usage Examples
+Basic Commands
+bash
+
+# List all devices
+sudo python3 device-manager.py list
+
+# Create veth pair
+sudo python3 device-manager.py create veth veth0 --ips 10.0.0.1/24,10.0.0.2/24
+
+# Create bridge
+sudo python3 device-manager.py create bridge br0 --interfaces eth0,veth0
+
+# Create TAP interface
+sudo python3 device-manager.py create tap tap0 --user $(whoami)
+
+# Create VLAN
+sudo python3 device-manager.py create vlan vlan10 --parent eth0 --vlan-id 10
+
+# Create USB gadget
+sudo python3 device-manager.py create usb-gadget gadget1 --vendor 0x1d6b --product 0x0104
+
+# Create disk image
+sudo python3 device-manager.py create disk disk0 --size 1024
+
+# Create virtual camera
+sudo python3 device-manager.py create camera cam0 --width 1920 --height 1080 --fps 30
+
+# Create virtual microphone
+sudo python3 device-manager.py create audio-mic mic0 --description "Virtual Mic"
+
+# Create audio loopback
+sudo python3 device-manager.py create audio-loopback loop0 --source mic0 --sink speaker0
+
+# Start/stop devices
+sudo python3 device-manager.py start disk0
+sudo python3 device-manager.py stop disk0
+
+# Show device info
+sudo python3 device-manager.py info disk0
+
+# Monitor devices
+sudo python3 device-manager.py monitor --interval 5
+
+# Delete device
+sudo python3 device-manager.py delete disk0
+
+Advanced Examples
+bash
+
+# Create multiple veth pairs for containers
+for i in {1..10}; do
+    sudo python3 device-manager.py create veth veth$i --ips 10.0.0.$i/24,10.0.0.$((i+100))/24
+done
+
+# Create bonded interface
+sudo python3 device-manager.py create bond bond0 --interfaces eth0,eth1 --mode 802.3ad
+
+# Create USB gadget with multiple functions
+sudo python3 device-manager.py create usb-gadget gadget1 --vendor 0x1d6b --product 0x0104
+# Then add functions manually:
+echo "acm" > /sys/kernel/config/usb_gadget/gadget1/functions/acm.usb0
+echo "ecm" > /sys/kernel/config/usb_gadget/gadget1/functions/ecm.usb0
+
+# Create encrypted disk
+sudo python3 device-manager.py create disk encrypt0 --size 512
+sudo cryptsetup luksFormat /dev/loop0
+sudo cryptsetup open /dev/loop0 encrypt0
+
+# Create camera with custom settings
+sudo python3 device-manager.py create camera webcam --width 1280 --height 720 --fps 60
+
+# Create audio pipeline
+sudo python3 device-manager.py create audio-mic mic0
+sudo python3 device-manager.py create audio-speaker speaker0
+sudo python3 device-manager.py create audio-loopback loop0 --source mic0 --sink speaker0
+
+This comprehensive device manager provides:
+
+    Complete Device Management: Create, delete, start, stop all device types
+
+    Network: veth, bridge, TAP, VLAN, MACVLAN, bonding
+
+    USB: Gadget creation, function management, enable/disable
+
+    Serial: PTY pairs, serial bridges, TCP bridges
+
+    Disk: Loop devices, mount/unmount, delete
+
+    Camera: V4L2 devices, frame generation, stream control
+
+    Audio: Virtual mic, speaker, loopback
+
+    Monitoring: Real-time device monitoring with statistics
+
+    State Persistence: Saves device configuration across reboots
+
+    Color Output: User-friendly colored terminal output
+
+

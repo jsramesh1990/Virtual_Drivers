@@ -1,0 +1,173 @@
+Building and Running Unit Tests
+Build Script
+bash
+
+#!/bin/bash
+# build-tests.sh - Build all unit tests
+
+echo "Building unit tests..."
+
+# Build veth tests
+gcc -o test-veth test-veth.c -Wall -Wextra -O2 -pthread
+if [ $? -eq 0 ]; then
+    echo "✓ test-veth built successfully"
+else
+    echo "✗ test-veth build failed"
+fi
+
+# Build bridge tests
+gcc -o test-bridge test-bridge.c -Wall -Wextra -O2 -pthread
+if [ $? -eq 0 ]; then
+    echo "✓ test-bridge built successfully"
+else
+    echo "✗ test-bridge build failed"
+fi
+
+# Build USB tests
+gcc -o test-usb test-usb.c -Wall -Wextra -O2 -pthread -lusb-1.0
+if [ $? -eq 0 ]; then
+    echo "✓ test-usb built successfully"
+else
+    echo "✗ test-usb build failed"
+fi
+
+echo "Build complete"
+
+Run All Tests
+bash
+
+#!/bin/bash
+# run-tests.sh - Run all unit tests
+
+echo "========================================="
+echo "Running Unit Tests"
+echo "========================================="
+
+# Run veth tests
+echo -e "\n${BLUE}Running veth tests...${NC}"
+./test-veth
+VETH_RESULT=$?
+
+# Run bridge tests
+echo -e "\n${BLUE}Running bridge tests...${NC}"
+./test-bridge
+BRIDGE_RESULT=$?
+
+# Run USB tests
+echo -e "\n${BLUE}Running USB tests...${NC}"
+./test-usb
+USB_RESULT=$?
+
+# Summary
+echo -e "\n${CYAN}========================================="
+echo "Test Summary"
+echo "=========================================${NC}"
+
+if [ $VETH_RESULT -eq 0 ]; then
+    echo -e "${GREEN}✓ veth tests passed${NC}"
+else
+    echo -e "${RED}✗ veth tests failed${NC}"
+fi
+
+if [ $BRIDGE_RESULT -eq 0 ]; then
+    echo -e "${GREEN}✓ bridge tests passed${NC}"
+else
+    echo -e "${RED}✗ bridge tests failed${NC}"
+fi
+
+if [ $USB_RESULT -eq 0 ]; then
+    echo -e "${GREEN}✓ usb tests passed${NC}"
+else
+    echo -e "${RED}✗ usb tests failed${NC}"
+fi
+
+# Overall result
+if [ $VETH_RESULT -eq 0 ] && [ $BRIDGE_RESULT -eq 0 ] && [ $USB_RESULT -eq 0 ]; then
+    echo -e "\n${GREEN}✓ All unit tests passed!${NC}"
+    exit 0
+else
+    echo -e "\n${RED}✗ Some unit tests failed${NC}"
+    exit 1
+fi
+
+Usage Examples
+Build Tests
+bash
+
+# Build all tests
+chmod +x build-tests.sh
+./build-tests.sh
+
+# Build specific test
+gcc -o test-veth test-veth.c -Wall -Wextra -O2 -pthread
+gcc -o test-bridge test-bridge.c -Wall -Wextra -O2 -pthread
+gcc -o test-usb test-usb.c -Wall -Wextra -O2 -pthread -lusb-1.0
+
+Run Tests
+bash
+
+# Run all tests as root
+sudo chmod +x run-tests.sh
+sudo ./run-tests.sh
+
+# Run individual tests
+sudo ./test-veth
+sudo ./test-bridge
+sudo ./test-usb
+
+# Run with verbose output
+sudo ./test-veth -v
+sudo ./test-bridge -v
+sudo ./test-usb -v
+
+Test Output Examples
+text
+
+========================================
+   VETH Driver Unit Tests
+========================================
+
+[TEST] Creating veth pair...
+[PASS] Create veth pair - Both interfaces created successfully
+
+[TEST] Setting interfaces up...
+[PASS] Set interfaces up - Both interfaces are UP
+
+[TEST] Assigning IP addresses...
+[PASS] Assign IP addresses - IPs assigned correctly
+
+[TEST] Testing connectivity...
+[PASS] Connectivity - Ping successful to peer
+
+========================================
+   Test Summary
+========================================
+Total Tests: 10
+Passed: 10
+Failed: 0
+
+✓ All tests passed!
+
+These complete unit tests provide:
+
+    VETH Tests: Creation, configuration, connectivity, performance
+
+    Bridge Tests: Creation, port management, STP, VLAN, performance
+
+    USB Tests: Gadget creation, configuration, functions, enumeration
+
+Each test includes:
+
+    Comprehensive coverage
+
+    Detailed output
+
+    Color-coded results
+
+    Summary statistics
+
+    Cleanup handling
+
+    Root privilege checking
+
+

@@ -1,0 +1,88 @@
+Usage Examples
+Run All Integration Tests
+bash
+
+# Run all integration tests
+sudo ./tests/integration/network-test.sh
+sudo ./tests/integration/usb-test.sh
+sudo ./tests/integration/serial-test.sh
+
+# Or run all from root directory
+sudo make test
+
+Run Specific Tests
+bash
+
+# Run only veth tests
+sudo ./tests/integration/network-test.sh --veth
+
+# Run USB gadget tests
+sudo ./tests/integration/usb-test.sh --gadget
+
+# Run PTY and socat tests
+sudo ./tests/integration/serial-test.sh --pty --socat
+
+Run with Verbose Output
+bash
+
+# Network tests with verbose output
+sudo ./tests/integration/network-test.sh --verbose
+
+# USB tests with verbose output
+sudo ./tests/integration/usb-test.sh --verbose
+
+# Serial tests with verbose output
+sudo ./tests/integration/serial-test.sh --verbose
+
+Skip Cleanup
+bash
+
+# Run tests and keep devices for inspection
+sudo ./tests/integration/network-test.sh --skip
+sudo ./tests/integration/usb-test.sh --skip
+sudo ./tests/integration/serial-test.sh --skip
+
+Run All Tests with Custom Configuration
+bash
+
+# Set custom parameters and run
+export TEST_VERBOSE=1
+export TEST_TIMEOUT=60
+sudo ./tests/integration/network-test.sh
+sudo ./tests/integration/usb-test.sh
+sudo ./tests/integration/serial-test.sh
+
+Check Test Results
+bash
+
+# View test logs
+cat logs/tests/network_test_*.log
+cat logs/tests/usb_test_*.log
+cat logs/tests/serial_test_*.log
+
+# View JSON results
+cat logs/tests/network_results_*.json | jq '.'
+cat logs/tests/usb_results_*.json | jq '.'
+cat logs/tests/serial_results_*.json | jq '.'
+
+These complete integration tests provide:
+
+    Network Tests: veth, bridge, TAP, MACVLAN, VLAN, performance, namespaces
+
+    USB Tests: gadget framework, redirection, mass storage, HID, audio
+
+    Serial Tests: PTY devices, socat bridge, communication, baud rates
+
+Each test includes:
+
+    Comprehensive test coverage
+
+    Detailed logging
+
+    JSON result output
+
+    Cleanup handling
+
+    Error reporting
+
+    Progress indication

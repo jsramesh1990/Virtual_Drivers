@@ -1,0 +1,32 @@
+#!/bin/bash
+# test-scripts/test-pty.sh
+
+echo "=== Testing PTY Manager ==="
+
+# Check if module is loaded
+if lsmod | grep -q pty-manager; then
+    echo "✅ PTY manager module loaded"
+else
+    echo "❌ PTY manager module not loaded"
+    exit 1
+fi
+
+# Check for PTY devices
+if ls /dev/ttyV* 2>/dev/null; then
+    echo "✅ PTY devices found"
+else
+    echo "❌ No PTY devices found"
+fi
+
+# Test PTY communication
+if [ -e "/dev/ttyV0" ] && [ -e "/dev/ttyV1" ]; then
+    echo "Testing PTY communication..."
+    echo "Test message" > /dev/ttyV0
+    if cat /dev/ttyV1 2>/dev/null; then
+        echo "✅ PTY communication working"
+    else
+        echo "❌ PTY communication failed"
+    fi
+fi
+
+echo "Test completed"

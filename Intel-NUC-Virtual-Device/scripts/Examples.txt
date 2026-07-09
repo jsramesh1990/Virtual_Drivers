@@ -1,0 +1,87 @@
+Usage Examples
+Build All
+bash
+
+# Build everything
+sudo ./scripts/build-all.sh
+
+# Clean and build
+sudo ./scripts/build-all.sh --clean
+
+# Build and install
+sudo ./scripts/build-all.sh --install
+
+# Build with tests
+sudo ./scripts/build-all.sh --test
+
+# Build with verbose output
+sudo ./scripts/build-all.sh --verbose
+
+Run Tests
+bash
+
+# Run all tests
+sudo ./scripts/test-all.sh
+
+# Test only network devices
+sudo ./scripts/test-all.sh --network
+
+# Test with verbose output
+sudo ./scripts/test-all.sh --verbose
+
+# Test specific components
+sudo ./scripts/test-all.sh --network --disk --camera
+
+Performance Testing
+bash
+
+# Run all performance tests
+sudo ./scripts/performance-test.sh
+
+# Run with verbose output
+sudo ./scripts/performance-test.sh --verbose
+
+# Save results to specific file
+sudo ./scripts/performance-test.sh --output my_results.json
+
+Monitor Devices
+bash
+
+# Continuous monitoring
+sudo ./scripts/monitor-devices.sh
+
+# Run once
+sudo ./scripts/monitor-devices.sh --once
+
+# Monitor only network devices
+sudo ./scripts/monitor-devices.sh --filter network
+
+# Monitor with 5 second interval
+sudo ./scripts/monitor-devices.sh --interval 5
+
+Cleanup
+bash
+
+# Cleanup everything
+sudo ./scripts/cleanup.sh
+
+# Force cleanup without confirmation
+sudo ./scripts/cleanup.sh --force
+
+# Cleanup only network devices
+sudo ./scripts/cleanup.sh --network
+
+# Cleanup specific components
+sudo ./scripts/cleanup.sh --network --disk --camera
+
+These complete scripts provide:
+
+    Build Management: Build all drivers, tools, and examples
+
+    Testing: Comprehensive test suite for all device types
+
+    Performance Testing: Measure performance of all components
+
+    Monitoring: Real-time device monitoring
+
+    Cleanup: Complete cleanup of all resources

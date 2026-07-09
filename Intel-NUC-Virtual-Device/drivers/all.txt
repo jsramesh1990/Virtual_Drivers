@@ -1,0 +1,46 @@
+Makefiles for all driver directories. To use them:
+
+    Build all drivers:
+
+bash
+
+cd /path/to/Intel-NUC-Virtual-Device
+make all
+
+    Install drivers:
+
+bash
+
+sudo make install
+
+    Load drivers:
+
+bash
+
+sudo make load
+
+    Check status:
+
+bash
+
+make status
+
+    Run tests:
+
+bash
+
+make test
+
+    Clean build files:
+
+bash
+
+make clean
+
+    Unload drivers:
+
+bash
+
+sudo make unload
+
+The drivers will be installed to /lib/modules/$(uname -r)/kernel/drivers/virtual-*/ and can be managed using the provided Makefile targets.

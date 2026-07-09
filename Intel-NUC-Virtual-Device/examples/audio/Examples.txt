@@ -1,0 +1,163 @@
+Usage Examples
+1. Virtual Microphone Setup
+bash
+
+# Setup virtual microphone
+sudo ./virtual-mic-setup.sh mic
+
+# Setup virtual speaker
+sudo ./virtual-mic-setup.sh speaker
+
+# Setup audio bridge
+sudo ./virtual-mic-setup.sh bridge mybridge
+
+# Setup recording source
+sudo ./virtual-mic-setup.sh record
+
+# Check status
+sudo ./virtual-mic-setup.sh status
+
+# Record 10 seconds of audio
+sudo ./virtual-mic-setup.sh record-audio 10
+
+# Test microphone
+sudo ./virtual-mic-setup.sh test-mic
+
+# Cleanup
+sudo ./virtual-mic-setup.sh cleanup
+
+2. Audio Routing
+bash
+
+# List audio devices
+python3 audio-routing.py list
+
+# Create audio route
+python3 audio-routing.py route alsa_output.pci-0000_00_1f.3.analog-stereo.monitor virtual_sink
+
+# Set volume
+python3 audio-routing.py volume alsa_output.pci-0000_00_1f.3.analog-stereo.monitor virtual_sink 0.8
+
+# Add effect
+python3 audio-routing.py effect alsa_output.pci-0000_00_1f.3.analog-stereo.monitor virtual_sink add reverb
+
+# Check status
+python3 audio-routing.py status
+
+# Record audio
+python3 audio-routing.py record --duration 10 --output test.wav
+
+# Play audio
+python3 audio-routing.py play test.wav
+
+# Monitor device
+python3 audio-routing.py monitor default
+
+# Interactive mode
+python3 audio-routing.py interactive
+
+3. Advanced Audio Processing
+python
+
+# Python script example
+from audio-routing import AudioProcessor, AudioEffectConfig, AudioEffect
+
+# Create processor
+processor = AudioProcessor(sample_rate=48000, channels=2)
+
+# Add effects
+processor.add_effect(AudioEffectConfig(
+    effect=AudioEffect.EQ,
+    params={'frequencies': [60, 250, 1000, 4000, 16000],
+            'gains': [3, -2, 0, 2, 1]}
+))
+
+processor.add_effect(AudioEffectConfig(
+    effect=AudioEffect.COMPRESSOR,
+    params={'threshold': -12, 'ratio': 4}
+))
+
+processor.add_effect(AudioEffectConfig(
+    effect=AudioEffect.REVERB,
+    params={'room_size': 50, 'damping': 50}
+))
+
+# Process audio
+audio_data = np.random.randn(1024)  # Example audio
+processed = processor.process_audio(audio_data)
+
+4. Integration with Applications
+bash
+
+# Setup virtual microphone for Zoom/Teams
+sudo ./virtual-mic-setup.sh mic zoom_mic "Zoom Virtual Mic"
+
+# Route system audio to virtual mic
+python3 audio-routing.py route alsa_output.pci-0000_00_1f.3.analog-stereo.monitor zoom_mic
+
+# Setup virtual speaker for screen recording
+sudo ./virtual-mic-setup.sh speaker record_speaker "Record Speaker"
+
+# Record both system audio and microphone
+python3 audio-routing.py record --duration 60 --output recording.wav
+
+# Play with effects
+python3 audio-routing.py effect default default add reverb
+python3 audio-routing.py effect default default add delay
+
+5. Docker Integration
+dockerfile
+
+# Dockerfile for audio routing
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    pulseaudio \
+    alsa-utils \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY virtual-mic-setup.sh /usr/local/bin/
+COPY audio-routing.py /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/virtual-mic-setup.sh \
+    && chmod +x /usr/local/bin/audio-routing.py
+
+CMD ["/usr/local/bin/virtual-mic-setup.sh", "mic"]
+
+These complete audio examples provide:
+
+    Virtual microphone and speaker setup
+
+    Advanced audio routing
+
+    Audio effects processing (EQ, compressor, reverb, delay, etc.)
+
+    Audio recording and playback
+
+    Interactive and command-line interfaces
+
+    Integration with PulseAudio and PipeWire
+
+    Audio monitoring and volume control
+
+    Audio stream processing
+
+    Audio mixing capabilities
+
+The examples cover all aspects of virtual audio device management on Intel NUC platforms, making them suitable for:
+
+    Video conferencing (Zoom, Teams, Skype)
+
+    Screen recording
+
+    Audio production
+
+    Testing and development
+
+    Educational purposes
+
+    IoT audio applications
+
+

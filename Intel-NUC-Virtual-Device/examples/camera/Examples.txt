@@ -1,0 +1,88 @@
+Usage Examples
+1. Build and Test V4L2 Application
+bash
+
+# Compile V4L2 test application
+gcc -o v4l2-test v4l2-test.c -lv4l2 -lm
+
+# Run basic test
+./v4l2-test -d /dev/video0
+
+# Capture 100 frames
+./v4l2-test -d /dev/video0 -c 100
+
+# Save frames to PPM files
+./v4l2-test -d /dev/video0 -s -c 50
+
+# List supported formats
+./v4l2-test -d /dev/video0 -l
+
+# Capture with specific format and resolution
+./v4l2-test -d /dev/video0 -w 1280 -h 720 -f RGB24 -r 60
+
+2. Run Camera Simulation
+bash
+
+# Basic simulation
+python3 camera-simulation.py start
+
+# Custom resolution and FPS
+python3 camera-simulation.py start -w 1920 -h 1080 -f 60
+
+# Specific pattern
+python3 camera-simulation.py start --pattern CHECKERBOARD
+
+# With text overlay
+python3 camera-simulation.py start --text "Test Camera"
+
+# Different format
+python3 camera-simulation.py start --format RGB24
+
+# Verbose mode
+python3 camera-simulation.py start -v
+
+# Save frames
+python3 camera-simulation.py start -s
+
+3. Interactive Commands
+text
+
+# In interactive mode:
+> status          # Show statistics
+> config          # Show configuration
+> pattern NOISE   # Change to noise pattern
+> fps 60          # Change FPS to 60
+> text "Hello"    # Change text overlay
+> save            # Save current frame
+> stop            # Stop simulation
+
+4. Integration with Device Manager
+bash
+
+# Create virtual camera device
+device-manager.py create camera video2
+
+# Run simulation on the new device
+python3 camera-simulation.py start -d /dev/video2
+
+# Test with ffplay
+ffplay /dev/video2
+
+# Test with VLC
+vlc v4l2:///dev/video2
+
+These complete examples provide:
+
+    Full V4L2 camera test application in C
+
+    Comprehensive camera simulation framework in Python
+
+    Multiple test patterns and pixel formats
+
+    Interactive control interface
+
+    Integration with V4L2 devices
+
+    Frame saving and statistics
+
+    Error handling and cleanup

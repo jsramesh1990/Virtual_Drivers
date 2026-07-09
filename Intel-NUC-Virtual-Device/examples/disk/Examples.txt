@@ -1,0 +1,130 @@
+Usage Examples
+1. Loop Device Management
+bash
+
+# Create a 1GB disk image
+sudo ./loop-mount.sh create mydisk 1024
+
+# Format as ext4
+sudo ./loop-mount.sh format ~/virtual-disk-images/mydisk.img
+
+# Mount the image
+sudo ./loop-mount.sh mount ~/virtual-disk-images/mydisk.img /mnt/mydisk
+
+# Check mounted images
+sudo ./loop-mount.sh list
+
+# Mount an ISO file
+sudo ./loop-mount.sh mount-iso ~/Downloads/ubuntu.iso
+
+# Create encrypted image
+sudo ./loop-mount.sh encrypt secret 512
+
+# Mount encrypted image
+sudo ./loop-mount.sh mount-enc ~/virtual-disk-images/secret.enc.img
+
+# Resize image
+sudo ./loop-mount.sh resize ~/virtual-disk-images/mydisk.img 2048
+
+# Unmount
+sudo ./loop-mount.sh umount /mnt/mydisk
+
+# Clean up all loop devices
+sudo ./loop-mount.sh cleanup
+
+2. NBD Examples
+bash
+
+# Export a file as NBD device
+python3 nbd-example.py export-file --file /tmp/nbd.img --size 100 --port 10809
+
+# Export a block device
+python3 nbd-example.py export-device /dev/sdb --port 10809
+
+# Run NBD client
+python3 nbd-example.py client localhost 10809 --read 0 --length 4096
+
+# Write data
+python3 nbd-example.py client localhost 10809 --write "Hello NBD" --read 0
+
+# Performance test
+python3 nbd-example.py perf --size 100 --iterations 100
+
+# Create disk image
+python3 nbd-example.py create-image /tmp/disk.img 1024 --format ext4
+
+# Mount NBD device
+python3 nbd-example.py mount localhost 10809 /dev/nbd0 /mnt/nbd
+
+3. Integration with Device Manager
+bash
+
+# Create virtual disk device
+device-manager.py create disk disk0 1024
+
+# Mount the disk
+sudo ./loop-mount.sh mount ~/virtual-disk-images/disk0.img /mnt/disk0
+
+# Export via NBD
+python3 nbd-example.py export-device /dev/loop0 --port 10809
+
+# Mount NBD on another system
+python3 nbd-example.py mount remote-host 10809 /dev/nbd0 /mnt/nbd
+
+4. Docker Integration
+bash
+
+# Create disk image for Docker
+sudo ./loop-mount.sh create docker-data 5120
+sudo ./loop-mount.sh format ~/virtual-disk-images/docker-data.img
+
+# Mount Docker data directory
+sudo ./loop-mount.sh mount ~/virtual-disk-images/docker-data.img /var/lib/docker
+
+# Start Docker with custom storage
+docker run -d -v /mnt/docker-data:/var/lib/docker docker:latest
+
+5. Kubernetes Integration
+bash
+
+# Create persistent volume image
+sudo ./loop-mount.sh create pv1 10240
+sudo ./loop-mount.sh format ~/virtual-disk-images/pv1.img
+
+# Mount as persistent volume
+sudo ./loop-mount.sh mount ~/virtual-disk-images/pv1.img /mnt/pv1
+
+# Create PV in Kubernetes
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv1
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/pv1
+EOF
+
+These complete disk examples provide:
+
+    Comprehensive loop device management
+
+    NBD server and client implementation
+
+    Disk image creation and formatting
+
+    Encrypted disk support
+
+    RAID array creation
+
+    Performance testing
+
+    Integration with Docker and Kubernetes
+
+    Mount/unmount management
+
+

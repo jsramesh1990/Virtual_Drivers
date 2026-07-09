@@ -1,0 +1,88 @@
+intel-nuc-virtual-device/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── Makefile
+├── requirements.txt
+├── setup.sh
+├── config/
+│   ├── kernel-config
+│   ├── network-config
+│   ├── usb-config
+│   └── audio-config
+├── drivers/
+│   ├── virtual-net/
+│   │   ├── veth-driver.c
+│   │   ├── bridge-driver.c
+│   │   ├── tap-driver.c
+│   │   └── Makefile
+│   ├── virtual-usb/
+│   │   ├── usb-gadget.c
+│   │   ├── usb-redirect.c
+│   │   └── Makefile
+│   ├── virtual-serial/
+│   │   ├── pty-manager.c
+│   │   ├── socat-bridge.c
+│   │   └── Makefile
+│   ├── virtual-disks/
+│   │   ├── loop-device.c
+│   │   ├── nbd-server.c
+│   │   └── Makefile
+│   ├── virtual-camera/
+│   │   ├── v4l2-driver.c
+│   │   ├── frame-generator.c
+│   │   └── Makefile
+│   └── virtual-audio/
+│       ├── pipewire-module.c
+│       ├── alsa-interface.c
+│       └── Makefile
+├── examples/
+│   ├── network/
+│   │   ├── veth-setup.sh
+│   │   ├── bridge-setup.sh
+│   │   └── network-simulation.py
+│   ├── usb/
+│   │   ├── usb-gadget-setup.sh
+│   │   └── usb-redirect-example.py
+│   ├── serial/
+│   │   ├── pty-example.c
+│   │   └── socat-example.sh
+│   ├── disk/
+│   │   ├── loop-mount.sh
+│   │   └── nbd-example.py
+│   ├── camera/
+│   │   ├── v4l2-test.c
+│   │   └── camera-simulation.py
+│   └── audio/
+│       ├── virtual-mic-setup.sh
+│       └── audio-routing.py
+├── scripts/
+│   ├── build-all.sh
+│   ├── test-all.sh
+│   ├── cleanup.sh
+│   ├── performance-test.sh
+│   └── monitor-devices.sh
+├── docs/
+│   ├── architecture.md
+│   ├── installation.md
+│   ├── developer-guide.md
+│   ├── api-reference.md
+│   ├── troubleshooting.md
+│   └── performance-tuning.md
+├── tests/
+│   ├── unit/
+│   │   ├── test-veth.c
+│   │   ├── test-bridge.c
+│   │   └── test-usb.c
+│   ├── integration/
+│   │   ├── network-test.sh
+│   │   ├── usb-test.sh
+│   │   └── serial-test.sh
+│   └── performance/
+│       ├── network-throughput.py
+│       ├── usb-benchmark.py
+│       └── disk-performance.py
+└── tools/
+    ├── device-manager.py
+    ├── monitoring-dashboard.py
+    └── performance-analyzer.py

@@ -1,0 +1,46 @@
+#!/bin/bash
+# quick-setup.sh - Quick setup for virtual device development
+
+echo "=== Virtual Device Development Setup ==="
+
+# Create directory structure
+mkdir -p drivers/virtual-{net,usb,serial,disks,camera,audio}
+mkdir -p test-scripts
+mkdir -p docs
+
+# Copy Makefiles
+for dir in drivers/virtual-{net,usb,serial,disks,camera,audio}; do
+    cat > $dir/Makefile << 'EOF'
+obj-m += *.o
+KERNELDIR := /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
+ccflags-y := -DDEBUG
+
+all:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+
+install:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+	depmod -a
+
+load: all
+	@for mod in *.ko; do \
+		echo "Loading $$mod..."; \
+		insmod $$mod || true; \
+	done
+
+unload:
+	@for mod in *.ko; do \
+		echo "Unloading $$mod..."; \
+		rmmod $$mod 2>/dev/null || true; \
+	done
+
+.PHONY: all clean install load unload
+EOF
+done
+
+echo "Directory structure created"
+echo "Run 'make' in each driver directory to build"

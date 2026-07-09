@@ -1,0 +1,397 @@
+# ============================================================
+# Network Configuration for Intel NUC Virtual Devices
+# ============================================================
+# Version: 1.0
+# Platform: Intel NUC 12 Pro
+# ============================================================
+
+# --------------------------
+# Network Interfaces
+# --------------------------
+network:
+  interfaces:
+    # Physical Ethernet
+    - name: eth0
+      type: physical
+      driver: igc
+      speed: 2500
+      duplex: full
+      autoneg: true
+      mtu: 1500
+      mac: "00:1B:21:3A:4C:5D"  # Example MAC - replace with actual
+      
+    # Virtual Ethernet Pairs
+    - name: veth0
+      type: virtual
+      subtype: veth
+      peer: veth1
+      state: up
+      mtu: 1500
+      
+    - name: veth2
+      type: virtual
+      subtype: veth
+      peer: veth3
+      state: up
+      mtu: 1500
+
+    # Bridge
+    - name: br0
+      type: bridge
+      stp: false
+      forward_delay: 0
+      members:
+        - eth0
+        - veth0
+      state: up
+      mtu: 1500
+
+    # TAP Interface for VMs
+    - name: tap0
+      type: virtual
+      subtype: tap
+      owner: 1000  # KVM group
+      persistent: true
+      state: up
+      mtu: 1500
+
+    # MACVLAN
+    - name: macvlan0
+      type: virtual
+      subtype: macvlan
+      mode: bridge
+      parent: eth0
+      state: up
+
+    # VLAN Interfaces
+    - name: eth0.10
+      type: vlan
+      vlan_id: 10
+      parent: eth0
+      state: up
+      mtu: 1500
+
+    - name: eth0.20
+      type: vlan
+      vlan_id: 20
+      parent: eth0
+      state: up
+      mtu: 1500
+
+  # --------------------------
+  # Bonding/LAG Configuration
+  # --------------------------
+  bonding:
+    - name: bond0
+      mode: 802.3ad  # LACP
+      lacp_rate: fast
+      xmit_hash_policy: layer3+4
+      miimon: 100
+      downdelay: 200
+      updelay: 200
+      members:
+        - eth0
+        - eth1  # If available
+      state: up
+
+# --------------------------
+# IP Addressing
+# --------------------------
+ip:
+  interfaces:
+    eth0:
+      dhcp: true
+      ipv4: 
+        address: "192.168.1.100/24"
+        gateway: "192.168.1.1"
+        dns: ["8.8.8.8", "1.1.1.1"]
+      ipv6:
+        enabled: false
+    
+    br0:
+      dhcp: false
+      ipv4:
+        address: "10.0.0.1/24"
+        gateway: null
+        dns: null
+      ipv6:
+        enabled: false
+
+# --------------------------
+# Routing
+# --------------------------
+routing:
+  tables:
+    - name: main
+      rules:
+        - from: 10.0.0.0/24
+          to: 0.0.0.0/0
+          via: 192.168.1.1
+          dev: eth0
+    
+    - name: virtual
+      rules:
+        - from: 172.16.0.0/12
+          to: 0.0.0.0/0
+          via: 10.0.0.1
+          dev: br0
+
+  ip_forward: true
+
+# --------------------------
+# Traffic Control
+# --------------------------
+tc:
+  qdisc:
+    - interface: eth0
+      type: htb
+      default: 10
+      classes:
+        - classid: 1:10
+          rate: 1000Mbit
+          ceil: 2500Mbit
+          prio: 0
+        - classid: 1:20
+          rate: 100Mbit
+          ceil: 2500Mbit
+          prio: 1
+        - classid: 1:30
+          rate: 10Mbit
+          ceil: 1000Mbit
+          prio: 2
+
+  filter:
+    - interface: eth0
+      parent: 1:0
+      priority: 10
+      match: "u32 match ip protocol 6 0xff match ip sport 80 0xffff"
+      action: "flowid 1:10"
+    - interface: eth0
+      parent: 1:0
+      priority: 20
+      match: "u32 match ip protocol 6 0xff match ip sport 443 0xffff"
+      action: "flowid 1:20"
+
+# --------------------------
+# Firewall Rules (nftables)
+# --------------------------
+firewall:
+  nftables:
+    tables:
+      - name: filter
+        family: inet
+        chains:
+          - name: input
+            type: filter
+            hook: input
+            priority: 0
+            policy: drop
+            rules:
+              - "iif lo accept"
+              - "ct state {established, related} accept"
+              - "ip protocol icmp accept"
+              - "tcp dport 22 accept"
+              - "tcp dport 80 accept"
+              - "tcp dport 443 accept"
+              - "udp dport 53 accept"
+          
+          - name: forward
+            type: filter
+            hook: forward
+            priority: 0
+            policy: drop
+            rules:
+              - "iif br0 oif eth0 accept"
+              - "iif eth0 oif br0 ct state {established, related} accept"
+          
+          - name: output
+            type: filter
+            hook: output
+            priority: 0
+            policy: accept
+            rules: []
+
+    sets:
+      - name: allowed_ips
+        type: ipv4_addr
+        elements:
+          - "192.168.1.0/24"
+          - "10.0.0.0/24"
+
+# --------------------------
+# DNS Configuration
+# --------------------------
+dns:
+  servers:
+    - "8.8.8.8"
+    - "1.1.1.1"
+    - "9.9.9.9"
+  search_domains:
+    - "local"
+    - "nuc.local"
+  hosts:
+    - ip: "127.0.0.1"
+      hostname: "localhost"
+    - ip: "192.168.1.100"
+      hostname: "nuc.local"
+    - ip: "10.0.0.1"
+      hostname: "gw.virtual"
+
+# --------------------------
+# DHCP Configuration (dnsmasq)
+# --------------------------
+dhcp:
+  dnsmasq:
+    interfaces:
+      - name: br0
+        range: "10.0.0.100,10.0.0.200"
+        lease_time: 86400
+        options:
+          - "option:router,10.0.0.1"
+          - "option:dns-server,10.0.0.1"
+        hosts:
+          - mac: "00:11:22:33:44:55"
+            ip: "10.0.0.10"
+            name: "vm1"
+          - mac: "00:11:22:33:44:66"
+            ip: "10.0.0.11"
+            name: "vm2"
+
+# --------------------------
+# Network Monitoring
+# --------------------------
+monitoring:
+  interfaces:
+    - eth0
+    - br0
+    - veth0
+  statistics:
+    - rx_packets
+    - tx_packets
+    - rx_bytes
+    - tx_bytes
+    - rx_errors
+    - tx_errors
+  alert:
+    threshold:
+      rx_errors: 100
+      tx_errors: 100
+      bandwidth: 2000  # Mbit/s
+  log:
+    - netdev: "eth0"
+      interval: 60
+      file: "/var/log/network/eth0.log"
+
+# --------------------------
+# VPN Configuration
+# --------------------------
+vpn:
+  wireguard:
+    enabled: false
+    interfaces:
+      - name: wg0
+        address: "10.0.1.1/24"
+        private_key: "YOUR_PRIVATE_KEY"
+        listen_port: 51820
+        peers: []
+  
+  openvpn:
+    enabled: false
+    server:
+      port: 1194
+      proto: udp
+      dev: tun
+      ca: "/etc/openvpn/ca.crt"
+      cert: "/etc/openvpn/server.crt"
+      key: "/etc/openvpn/server.key"
+      dh: "/etc/openvpn/dh.pem"
+      server: "10.8.0.0 255.255.255.0"
+      push: ["route 192.168.1.0 255.255.255.0"]
+
+# --------------------------
+# Quality of Service (QoS)
+# --------------------------
+qos:
+  fq_codel:
+    enabled: true
+    interface: eth0
+    target: "5ms"
+    interval: "100ms"
+    quantum: 300
+  
+  cake:
+    enabled: false
+    interface: eth0
+    bandwidth: "2500Mbit"
+    diffserv: 4
+    nat: true
+    wash: true
+
+# --------------------------
+# Security Features
+# --------------------------
+security:
+  sysctl:
+    - net.ipv4.conf.all.rp_filter: "1"
+    - net.ipv4.conf.default.rp_filter: "1"
+    - net.ipv4.icmp_echo_ignore_broadcasts: "1"
+    - net.ipv4.icmp_ignore_bogus_error_responses: "1"
+    - net.ipv4.tcp_syncookies: "1"
+    - net.ipv4.conf.all.accept_redirects: "0"
+    - net.ipv4.conf.default.accept_redirects: "0"
+    - net.ipv6.conf.all.accept_redirects: "0"
+    - net.ipv6.conf.default.accept_redirects: "0"
+    - net.ipv4.conf.all.log_martians: "1"
+    - net.ipv4.conf.default.log_martians: "1"
+  
+  tcp:
+    sack: true
+    fack: true
+    window_scaling: true
+    timestamps: true
+    ecn: true
+    bbr: true
+
+# --------------------------
+# Performance Tuning
+# --------------------------
+performance:
+  ring_buffer:
+    rx: 4096
+    tx: 4096
+  
+  interrupt_coalescence:
+    rx_usecs: 100
+    rx_max_frames: 10
+    tx_usecs: 50
+    tx_max_frames: 5
+  
+  offloading:
+    gro: true
+    gso: true
+    tso: true
+    tx_checksum: true
+    rx_checksum: true
+  
+  kernel_parameters:
+    - net.core.rmem_max: "16777216"
+    - net.core.wmem_max: "16777216"
+    - net.core.rmem_default: "8388608"
+    - net.core.wmem_default: "8388608"
+    - net.core.optmem_max: "8388608"
+    - net.core.netdev_max_backlog: "50000"
+    - net.ipv4.tcp_rmem: "4096 87380 16777216"
+    - net.ipv4.tcp_wmem: "4096 65536 16777216"
+    - net.ipv4.tcp_mem: "16777216 16777216 16777216"
+    - net.ipv4.udp_rmem_min: "16384"
+    - net.ipv4.udp_wmem_min: "16384"
+    - net.core.somaxconn: "65535"
+    - net.ipv4.tcp_max_syn_backlog: "50000"
+    - net.ipv4.tcp_tw_reuse: "1"
+    - net.ipv4.tcp_tw_recycle: "0"
+    - net.ipv4.tcp_sack: "1"
+    - net.ipv4.tcp_dsack: "1"
+    - net.ipv4.tcp_fack: "1"
+    - net.ipv4.tcp_syncookies: "1"
+    - net.ipv4.tcp_congestion_control: "bbr"
+    - net.core.default_qdisc: "fq_codel"
